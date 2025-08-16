@@ -3,6 +3,8 @@ const session = require('express-session');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const app = express();
+const path = require("path");
+
 const port = process.env.PORT || 3000;
 
 app.use(cors());
