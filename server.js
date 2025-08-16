@@ -217,11 +217,11 @@ app.post("/api/programming-hard-perfect", async (req, res) => {
 // ------------------- FRONTEND -------------------
 
 // Serve static files
-app.use(express.static(path.join(__dirname, "../www")));
+app.use(express.static(path.join(__dirname, "www")));
 
 // SPA fallback (exclude /api)
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../www/index.html"));
+  res.sendFile(path.join(__dirname, "www/index.html"));
 });
 
 // ------------------- START SERVER -------------------
