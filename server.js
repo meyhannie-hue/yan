@@ -24,12 +24,6 @@ const db = mysql.createPool({
   password: '',
   database: 'techyme'
 });
-app.use(express.static(path.join(__dirname, "../www")));
-
-// ✅ Redirect all non-API routes to index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../www/index.html"));
-});
 
 // ✅ GET player info
 app.get('/api/player/:username', async (req, res) => {
@@ -313,6 +307,12 @@ app.post("/api/programming-hard-perfect", async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
+});
+app.use(express.static(path.join(__dirname, "../www")));
+
+// ✅ Redirect all non-API routes to index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../www/index.html"));
 });
 // ✅ Start server 
 app.listen(port, () => {
