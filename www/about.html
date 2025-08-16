@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About - Techy Me</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f2f6fa;
+    color: #333;
+  }
+
+  .app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+    padding: 40px 20px 80px; /* bottom padding to prevent overlap with footer */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .about-card {
+    background: #fff;
+    max-width: 800px;
+    width: 100%;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.6s ease;
+  }
+
+  .about-icon {
+    font-size: 48px;
+    color: #4a90e2;
+    text-align: center;
+  }
+
+  .about-title {
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+    margin: 10px 0 25px;
+  }
+
+  .about-description {
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    text-align: justify;
+  }
+
+  .about-description ul {
+    padding-left: 20px;
+  }
+
+  .about-description li {
+    margin-bottom: 8px;
+  }
+
+  .acknowledgment {
+    background: #f9f9fb;
+    padding: 18px 20px;
+    border-left: 4px solid #4a90e2;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #555;
+    margin-top: 25px;
+  }
+
+  footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background-color: #ffffff;
+  border-top: 1px solid #ccc;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  z-index: 10;
+}
+
+.icon {
+  font-size: 30px;
+  color: #4a90e2;
+  cursor: pointer;
+}
+
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .about-card {
+      padding: 20px;
+      margin: 10px;
+    }
+
+    .about-title {
+      font-size: 22px;
+    }
+
+    .about-description {
+      font-size: 14px;
+    }
+
+    .acknowledgment {
+      font-size: 13px;
+    }
+
+    main {
+      padding: 20px 10px 80px; /* match bottom padding on small screens too */
+    }
+  }
+</style>
+
+</head>
+<body>
+  <div class="app-container">
+    <main>
+      <div class="about-card">
+        <div class="about-icon">🧾</div>
+        <div class="about-title">About TECHY ME</div>
+        <div class="about-description">
+  <strong>TECHY ME</strong> is a gamified learning platform that helps students master IT skills through interactive modules and games.
+  <br><br>
+  Tailored for beginners and high school learners, our modules cover:
+  <ul>
+    <li>⚙️ <strong>Networking</strong> – Learn wiring and connections</li>
+    <li>💻 <strong>Programming</strong> – Practice HTML, CSS, JS, PHP</li>
+    <li>🧩 <strong>System Unit</strong> – Assemble/disassemble PC parts</li>
+  </ul>
+  <br>
+  <strong>What makes TECHY ME different?</strong><br>
+  TECHY ME is not just educational — it's interactive, competitive, and user-friendly. It combines visual challenges, problem-solving exercises, and step-by-step tutorials to make learning both efficient and exciting.
+  <br><br>
+
+  <strong>Key Features:</strong>
+  <ul>
+    <li>🧠 Unlockable difficulty levels and achievements</li>
+    <li>📱 Fully responsive for desktop, tablet, and mobile</li>
+  </ul>
+
+  <strong>Benefits of Using TECHY ME:</strong>
+  <ul>
+    <li>✅ Learn core IT skills in a structured and fun environment</li>
+    <li>✅ Improve logical thinking and practical problem-solving</li>
+    <li>✅ Build foundational knowledge for future tech careers</li>
+    <li>✅ Encourage self-paced, goal-driven learning</li>
+  </ul>
+
+  Whether you're new to tech or just want to improve your skills, <strong>TECHY ME</strong> gives you the tools, challenges, and motivation you need to succeed.
+</div>
+
+<div class="acknowledgment">
+  <strong>Acknowledgment:</strong><br><br>
+  Special thanks to our teachers, mentors, and classmates for their support. This project was made possible by the guidance and encouragement from our school and ICT community.
+</div>
+
+<div class="acknowledgment">
+  <strong>Developers:</strong><br><br>
+  This platform was developed by a passionate student team dedicated to making tech education more interactive and accessible:
+  <ul style="margin-top: 10px;">
+    <li>👑 <strong>Leader:</strong> Ian Dimaangay</li>
+    <li>👩‍💻 <strong>Members:</strong> Jenalyn Balbada, Sarah Jean Padel</li>
+  </ul>
+</div>
+
+    </main>
+
+    <footer>
+  <div class="icon" onclick="gotoAbout()" style="background: #4e5d78; padding: 8px 12px; border-radius: 50%;">🧾</div> <!-- About icon -->
+  <div class="icon" onclick="gotoLeaderboard()">📊</div>
+  <div class="icon" onclick="gotoDashboard()">👑</div>
+  <div class="icon" onclick="gotoSetting()">⚙️</div>
+</footer>
+
+  </div>
+
+  <script>
+    function gotoDashboard() {
+      window.location.href = "dashboard.html";
+    }
+
+    function gotoAbout() {
+      window.location.href = "about.html";
+    }
+
+    function gotoSetting() {
+      alert("Settings coming soon!");
+    }
+  </script>
+</body>
+</html>

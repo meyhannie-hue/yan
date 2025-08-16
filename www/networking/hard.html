@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ethernet Game - T568B & Crossover</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+  margin: 0;
+  background: #f9f9f9;
+  color: #333;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-top: 30px;
+}
+
+.back-btn {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  background: #e0e0e0;
+  color: #333;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.timer {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 10px;
+  color: #555;
+}
+
+.game {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 80px;
+  margin-top: 40px;
+  position: relative;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+  z-index: 1;
+}
+
+.slot, .wire {
+  width: 200px;
+  height: 36px;
+  background: #ffffff;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.wire {
+  cursor: grab;
+}
+
+.wire:active {
+  background: #f0f0f0;
+  transform: scale(1.02);
+}
+
+.pin-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #666;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.slot .pin-dot {
+  right: -18px;
+}
+
+.wire .pin-dot {
+  left: -18px;
+}
+
+.submit-btn {
+  display: block;
+  margin: 40px auto;
+  background: #4CAF50;
+  color: white;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.submit-btn:hover {
+  background: #45a049;
+}
+
+  </style>
+</head>
+<body>
+  <h1>Ethernet Wiring Game</h1>
+  <h2 id="phaseLabel">Phase: T568B</h2>
+  <div id="timer">Time Left: <span id="time">30</span> seconds</div>
+
+  <div class="game">
+    <canvas id="lineCanvas" width="1920" height="1080"></canvas>
+    <div class="column" id="pinColumn"></div>
+    <div class="column" id="wireColumn"></div>
+  </div>
+
+  <button class="submit-btn" onclick="checkWiring()" id="submitBtn">Submit</button>
+
+  <script>
+    const canvas = document.getElementById('lineCanvas');
+    const ctx = canvas.getContext('2d');
+    const pinColumn = document.getElementById('pinColumn');
+    const wireColumn = document.getElementById('wireColumn');
+    const phaseLabel = document.getElementById('phaseLabel');
+    const timeSpan = document.getElementById('time');
+    const submitBtn = document.getElementById('submitBtn');
+
+    
+    // ✅ Get username from session storage (set earlier in your game/app)
+const username = sessionStorage.getItem("playerName");
+
+    const phases = {
+      t568b: ['White-Orange','Orange','White-Green','Blue','White-Blue','Green','White-Brown','Brown'],
+      crossover: ['White-Green','Green','White-Orange','Blue','White-Blue','Orange','White-Brown','Brown']
+    };
+
+    const colors = {
+      "White-Orange": "linear-gradient(to right, white 50%, orange 50%)",
+      "Orange": "orange",
+      "White-Green": "linear-gradient(to right, white 50%, green 50%)",
+      "Blue": "blue",
+      "White-Blue": "linear-gradient(to right, white 50%, blue 50%)",
+      "Green": "green",
+      "White-Brown": "linear-gradient(to right, white 50%, brown 50%)",
+      "Brown": "brown"
+    };
+
+    let currentPhase = 't568b';
+    let startWire = null;
+    let connections = [];
+    let timerInterval;
+    let timeLeft = 30;
+    let gameOver = false;
+    let phasePerfect = {
+      t568b: false,
+      crossover: false
+    };
+
+    function setupPhase(phase) {
+      currentPhase = phase;
+      gameOver = false;
+      submitBtn.disabled = false;
+      phaseLabel.textContent = `Phase: ${phase === 't568b' ? 'T568B' : 'Crossover'}`;
+      connections = [];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pinColumn.innerHTML = '';
+      wireColumn.innerHTML = '';
+      clearInterval(timerInterval);
+      timeLeft = 30;
+      timeSpan.textContent = timeLeft;
+      startTimer();
+
+      const pins = Array.from({ length: 8 }, (_, i) => i + 1);
+      const shuffled = [...phases[phase]].sort(() => Math.random() - 0.5);
+
+      pins.forEach(i => {
+        const div = document.createElement('div');
+        div.className = 'slot';
+        div.dataset.pin = i;
+        div.innerHTML = `Pin ${i} <span class="pin-dot"></span>`;
+        div.addEventListener('dragover', e => e.preventDefault());
+        div.addEventListener('drop', () => {
+          if (gameOver) return;
+          const pin = div.dataset.pin;
+          const color = startWire.dataset.color;
+          connections = connections.filter(c => c.pin !== pin && c.color !== color);
+          connections.push({ pin, color, wire: startWire });
+          drawConnections();
+        });
+        pinColumn.appendChild(div);
+      });
+
+      shuffled.forEach(color => {
+        const div = document.createElement('div');
+        div.className = 'wire';
+        div.draggable = true;
+        div.dataset.color = color;
+        div.style.background = colors[color];
+        div.innerHTML = `<span class='pin-dot'></span> ${color}`;
+        div.addEventListener('dragstart', () => {
+          if (gameOver) return;
+          startWire = div;
+        });
+        wireColumn.appendChild(div);
+      });
+    }
+
+    function drawConnections() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rect = canvas.getBoundingClientRect();
+      connections.forEach(conn => {
+        const pinDot = document.querySelector(`.slot[data-pin="${conn.pin}"] .pin-dot`).getBoundingClientRect();
+        const wireDot = conn.wire.querySelector('.pin-dot').getBoundingClientRect();
+        const x1 = wireDot.left + wireDot.width / 2 - rect.left;
+        const y1 = wireDot.top + wireDot.height / 2 - rect.top;
+        const x2 = pinDot.left + pinDot.width / 2 - rect.left;
+        const y2 = pinDot.top + pinDot.height / 2 - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineWidth = 4;
+
+        if (conn.color.includes('-')) {
+          const [c1, c2] = conn.color.split('-');
+          const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+          gradient.addColorStop(0, c1.toLowerCase());
+          gradient.addColorStop(1, c2.toLowerCase());
+          ctx.strokeStyle = gradient;
+        } else {
+          ctx.strokeStyle = conn.color.toLowerCase();
+        }
+        ctx.stroke();
+      });
+    }
+
+    function checkWiring() {
+  if (gameOver) return;
+
+  const correct = phases[currentPhase];
+  if (connections.length < 8) {
+    console.log("⚠️ Connect all wires.");
+    return;
+  }
+  let totalCorrect = 0;
+
+  for (let i = 0; i < 8; i++) {
+    const pin = (i + 1).toString();
+    const match = connections.find(c => c.pin === pin);
+    if (match && match.color === correct[i]) {
+      totalCorrect++;
+    }
+  }
+
+  if (totalCorrect === 8) {
+    phasePerfect[currentPhase] = true;
+    console.log("✅ Perfect wiring!");
+  } else {
+    console.log(`✅ You got ${totalCorrect}/8 correct!`);
+  }
+
+  nextPhase();
+}
+
+    async function nextPhase() {
+  if (currentPhase === 't568b') {
+    setupPhase('crossover');
+  } else {
+    clearInterval(timerInterval);
+    gameOver = true;
+    submitBtn.disabled = true;
+
+    if (phasePerfect.t568b && phasePerfect.crossover) {
+      try {
+        const res = await fetch('http://localhost:3000/updateHardPoints', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, points: 4560 })
+        });
+        const data = await res.json();
+        console.log("Backend response:", data);
+        alert("🎉 Congratulations! You completed both phases perfectly! Points awarded.");
+
+        window.location.href = "../levels/networkinglevels.html";
+      } catch (err) {
+        console.error("Error saving score:", err);
+        alert("⚠️ Could not save points due to server error.");
+      }
+    } else {
+      alert("🎮 Game over! You can replay for a better score.");
+      
+      // Also allow restart on normal game over
+      gameOver = false;
+      submitBtn.disabled = false;
+      setupPhase('t568b');
+    }
+  }
+}
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timeSpan.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          gameOver = true;
+          submitBtn.disabled = true;
+          if (confirm("⏰ Time's up! Try again?")) {
+            setupPhase('t568b');
+          }
+        }
+      }, 1000);
+    }
+
+    setupPhase('t568b');
+  </script>
+</body>
+</html>

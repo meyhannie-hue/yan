@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ethernet T568B Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style/easy.css" />
+</head>
+<body>
+  <button class="back-btn" onclick="window.history.back()">⭥ Back</button>
+  <h1>Ethernet Wiring Game - T568B</h1>
+  <div class="timer">⏳ Time left: <span id="countdown">1:00</span></div>
+
+  <div class="game">
+    <canvas id="lineCanvas" width="1920" height="1080"></canvas>
+    <div class="column" id="pinColumn"></div>
+    <div class="column" id="wireColumn"></div>
+  </div>
+
+  <button class="submit-btn" onclick="checkWiring()">Submit</button>
+
+  <script>
+    const canvas = document.getElementById('lineCanvas');
+    const ctx = canvas.getContext('2d');
+    let startWire = null;
+    let connections = [];
+    let timeLeft = 60;
+    let timerStarted = false;
+    let timer;
+    const countdownEl = document.getElementById('countdown');
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function startTimer() {
+      if (timerStarted) return;
+      timerStarted = true;
+      countdownEl.textContent = formatTime(timeLeft);
+      timer = setInterval(() => {
+        timeLeft--;
+        countdownEl.textContent = formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("⏰ Time's up! Try again.");
+          location.reload();
+        }
+      }, 1000);
+    }
+
+    const pins = document.getElementById('pinColumn');
+    for (let i = 1; i <= 8; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.pin = i;
+      slot.innerHTML = `Pin ${i} <span class="pin-dot"></span>`;
+      pins.appendChild(slot);
+    }
+
+    const wiresData = {
+      "White-Orange": "linear-gradient(to right, white 50%, orange 50%)",
+      "Orange": "orange",
+      "White-Green": "linear-gradient(to right, white 50%, green 50%)",
+      "Blue": "blue",
+      "White-Blue": "linear-gradient(to right, white 50%, blue 50%)",
+      "Green": "green",
+      "White-Brown": "linear-gradient(to right, white 50%, brown 50%)",
+      "Brown": "brown"
+    };
+
+    const shuffled = Object.keys(wiresData).sort(() => 0.5 - Math.random());
+    const wiresContainer = document.getElementById('wireColumn');
+    shuffled.forEach(color => {
+      const div = document.createElement('div');
+      div.className = 'wire';
+      div.draggable = true;
+      div.dataset.color = color;
+      div.style.background = wiresData[color];
+      div.innerHTML = `<span class="pin-dot"></span> ${color}`;
+      wiresContainer.appendChild(div);
+
+      div.addEventListener('dragstart', () => {
+        startWire = div;
+        startTimer();
+      });
+      div.addEventListener('mousedown', startTimer);
+      div.addEventListener('touchstart', startTimer);
+    });
+
+    document.querySelectorAll('.slot').forEach(slot => {
+      slot.addEventListener('dragover', e => e.preventDefault());
+      slot.addEventListener('drop', () => {
+        const pin = slot.getAttribute('data-pin');
+        const color = startWire.getAttribute('data-color');
+        connections = connections.filter(c => c.pin !== pin && c.color !== color);
+        connections.push({ pin, color, wire: startWire });
+        drawConnections();
+      });
+    });
+
+    function drawConnections() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rect = canvas.getBoundingClientRect();
+      connections.forEach(conn => {
+        const pinDot = document.querySelector(`.slot[data-pin="${conn.pin}"] .pin-dot`).getBoundingClientRect();
+        const wireDot = conn.wire.querySelector('.pin-dot').getBoundingClientRect();
+        const x1 = wireDot.left + wireDot.width / 2 - rect.left;
+        const y1 = wireDot.top + wireDot.height / 2 - rect.top;
+        const x2 = pinDot.left + pinDot.width / 2 - rect.left;
+        const y2 = pinDot.top + pinDot.height / 2 - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineWidth = 4;
+
+        if (conn.color.includes('-')) {
+          const [c1, c2] = conn.color.split('-');
+          const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+          gradient.addColorStop(0, c1.toLowerCase());
+          gradient.addColorStop(1, c2.toLowerCase());
+          ctx.strokeStyle = gradient;
+        } else {
+          ctx.strokeStyle = conn.color.toLowerCase();
+        }
+        ctx.stroke();
+      });
+    }
+
+    async function checkWiring() {
+      const correctOrder = [
+        'White-Orange', 'Orange', 'White-Green', 'Blue',
+        'White-Blue', 'Green', 'White-Brown', 'Brown'
+      ];
+
+      if (connections.length < 8) {
+        alert("⚠️ Incomplete: Please connect all wires.");
+        return;
+      }
+
+      const playerName = sessionStorage.getItem("playerName");
+      if (!playerName) {
+        alert("❌ No player found.");
+        return window.location.href = "../index.html";
+      }
+
+      let allCorrect = true;
+      for (let i = 0; i < 8; i++) {
+        const pin = (i + 1).toString();
+        const match = connections.find(c => c.pin === pin);
+        if (!match || match.color !== correctOrder[i]) {
+          allCorrect = false;
+          break;
+        }
+      }
+
+      const cleanedConnections = connections.map(c => ({
+        pin: c.pin,
+        color: c.color
+      }));
+
+      // ✅ DEBUG LINE ADDED HERE
+      console.log("Sending to backend:", {
+        name: playerName,
+        connections: cleanedConnections,
+        perfect: allCorrect
+      });
+
+      try {
+        const res = await fetch("http://localhost:3000/api/player/claim-t568b", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: playerName,
+            connections: cleanedConnections,
+            perfect: allCorrect
+          })
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          if (result.pointsAwarded > 0) {
+            alert(`🎉 You earned ${result.pointsAwarded} points.`);
+          } else if (allCorrect) {
+            alert("🎉 Perfect match! Medium level unlocked.");
+          } else {
+            alert("✅ Submission recorded.");
+          }
+          setTimeout(() => window.history.back(), 1500);
+        } else {
+          console.error("❌ Server response error:", result.error);
+          alert("❌ Failed to save your progress: " + result.error);
+        }
+      } catch (err) {
+        console.error("❌ Submit error:", err);
+        alert("❌ Failed to save your progress. Check console for details.");
+      }
+    }
+  </script>
+</body>
+</html>  then pag ang user naka perfect score dito sa code ma uunlock ang medium level dito <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Networking Levels</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom right, #e1f5fe, #ede7f6);
+    }
+
+    .app-container {
+      max-width: 420px;
+      margin: auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #6c63ff;
+      color: #fff;
+      padding: 20px;
+      font-weight: bold;
+    }
+
+    .title {
+      font-size: 20px;
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .back-button {
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .content-title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 600;
+      margin-top: 30px;
+      color: #333;
+    }
+
+    .level-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+      gap: 20px;
+    }
+
+    .level {
+      background-color: #ede7f6;
+      padding: 14px 30px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+      text-align: center;
+    }
+
+    .level:hover {
+      transform: translateY(-2px);
+    }
+
+    .level.locked {
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .level.locked::after {
+      content: " 🔒";
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .app-container {
+        border-radius: 0;
+      }
+
+      .title {
+        font-size: 18px;
+      }
+
+      .content-title {
+        font-size: 20px;
+      }
+
+      .level {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="back-button" onclick="goBack()">⤺</div>
+      <div class="title">TECHY ME</div>
+      <div style="width: 30px;"></div>
+    </header>
+
+    <div class="content-title">NETWORKING</div>
+
+    <div class="level-buttons">
+      <div class="level" onclick="goTo('easy.html')">Normal</div>
+      <div id="mediumLevel" class="level locked">Medium</div>
+      <div id="hardLevel" class="level locked">Hard</div>
+    </div>
+  </div>
+
+  <script>
+    function goTo(page) {
+      window.location.href = `../networking/${page}`;
+    }
+
+    function goBack() {
+      window.location.href = "../dashboard.html";
+    }
+
+    async function loadProgressFromBackend() {
+  const playerName = sessionStorage.getItem("playerName");
+  if (!playerName) {
+    alert("❌ No player found. Redirecting...");
+    return window.location.href = "../index.html";
+  }
+
+  try {
+    const api = "http://localhost:3000/api"; // ⚠ Change this to your backend URL if hosted online
+const res = await fetch(`${api}/player/${encodeURIComponent(playerName)}`);
+
+    if (!res.ok) throw new Error("Player not found");
+
+    const player = await res.json();
+    const progress = player.progress || {};
+
+    const medium = document.getElementById("mediumLevel");
+    const hard = document.getElementById("hardLevel");
+
+    if (progress.networking_easy_perfect) {
+      medium.classList.remove("locked");
+      medium.onclick = () => goTo("medium.html");
+    }
+
+    if (progress.networking_medium_perfect) {
+      hard.classList.remove("locked");
+      hard.onclick = () => goTo("hard.html");
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    alert("❌ Failed to load player data. Please login again.");
+    sessionStorage.removeItem("playerName");
+    window.location.href = "../index.html";
+  }
+}g
+
+    document.addEventListener("DOMContentLoaded", loadProgressFromBackend);
+  </script>
+</body>
+</html>

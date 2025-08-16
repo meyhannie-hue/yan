@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS Coding Game - Write CSS Only</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #eef2f3, #8e9eab);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #4a2c50;
+      color: #fff;
+      padding: 20px;
+    }
+    .header-title {
+      font-size: 20px;
+      flex-grow: 1;
+      text-align: center;
+      font-weight: bold;
+    }
+    .back-button {
+      cursor: pointer;
+      font-size: 20px;
+      color: #fff;
+    }
+    .placeholder {
+      width: 30px;
+    }
+    .challenge {
+      background: #fff;
+      padding: 20px;
+      font-size: 18px;
+      text-align: center;
+      border-bottom: 2px solid #ccc;
+      min-height: 60px;
+    }
+    #progress {
+      font-weight: bold;
+      color: #444;
+      margin-top: 5px;
+    }
+    textarea {
+      width: 90%;
+      max-width: 700px;
+      margin: 15px auto;
+      height: 140px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      resize: none;
+      display: block;
+      background: #ffffff;
+    }
+    button {
+      margin: 15px auto;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background-color: #9527ae;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 90%;
+      max-width: 700px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #219150;
+    }
+    #nextBtn {
+      background-color: #9334db;
+      display: none;
+      margin-top: 30px;
+      width: 85%;
+    }
+    #nextBtn:hover {
+      background-color: #258cd1;
+    }
+    .result {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #333;
+      min-height: 24px;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+      min-height: 250px;
+      background: #fff;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+      margin-top: 15px;
+    }
+    @media (max-width: 600px) {
+      .app-container {
+        border-radius: 0;
+        height: 100vh;
+      }
+      .header-title {
+        font-size: 18px;
+      }
+      button {
+        font-size: 14px;
+      }
+      #nextBtn {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="back-button" onclick="confirmQuit()">⤺</div>
+      <div class="header-title">🎨 CSS Coding Game - Write CSS Only</div>
+      <div class="placeholder"></div>
+    </header>
+
+    <div class="challenge">
+      <div id="instruction">Phase 1: Make all &lt;h1&gt; elements have green text color.</div>
+      <div id="progress">1 / 5</div>
+    </div>
+
+    <textarea id="userCSS" placeholder="Write CSS here, e.g. h1 { color: green; }"></textarea>
+    <button id="runBtn" onclick="runAndCheck()">▶ Run & Check</button>
+    <div class="result" id="resultMsg"></div>
+    <button id="nextBtn" onclick="goToNextPhase()">➡ Next Phase</button>
+
+    <iframe id="output"></iframe>
+  </div>
+
+<script>
+  const phases = [
+    {
+      instruction: 'Phase 1: Make all <code>&lt;h1&gt;</code> elements have green text color.',
+      testHTML: '<h1>Hello World</h1>',
+      expectedCSS: 'h1{color:green;}'
+    },
+    {
+      instruction: 'Phase 2: Set all <code>&lt;p&gt;</code> elements to have a font size of 18px.',
+      testHTML: '<p>Sample paragraph</p>',
+      expectedCSS: 'p{font-size:18px;}'
+    },
+    {
+      instruction: 'Phase 3: Create a CSS class <code>.highlight</code> that sets background color to lightblue.',
+      testHTML: '<div class="highlight">Highlighted text</div>',
+      expectedCSS: '.highlight{background:lightblue;}'
+    },
+    {
+      instruction: 'Phase 4: Add a 3px dashed red border to all <code>&lt;img&gt;</code> elements.',
+      testHTML: '<img src="cat.jpg" alt="Cat Image">',
+      expectedCSS: 'img{border:3px dashed red;}'
+    },
+    {
+      instruction: 'Phase 5: Center all text inside the <code>&lt;body&gt;</code> element.',
+      testHTML: '<p>Centered text</p>',
+      expectedCSS: 'body{text-align:center;}'
+    }
+  ];
+
+  let currentPhase = 0;
+
+  function updateInstruction() {
+    const phase = phases[currentPhase];
+    document.getElementById('instruction').innerHTML = phase.instruction;
+    document.getElementById('progress').innerText = `${currentPhase + 1} / ${phases.length}`;
+    document.getElementById('userCSS').value = '';
+    document.getElementById('resultMsg').innerText = '';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('output').srcdoc = '';
+  }
+  function awardPointsOnce() {
+  const username = sessionStorage.getItem("playerName");
+  if (!username) {
+    alert("⚠️ Player not logged in. Please log in first.");
+    return;
+  }
+
+  fetch("http://localhost:3000/api/programming-medium-perfect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const resultMsg = document.getElementById('resultMsg');
+    // Show fixed 7620 points message
+    resultMsg.innerText = "🎉 Congratulations! You earned 7620 points!";
+    resultMsg.style.color = "green";
+
+    // Redirect after 2 seconds
+    setTimeout(() => {
+      window.location.href = "../levels/programminglevel.html";
+    }, 2000);
+  })
+  .catch(err => {
+    console.error("Error awarding points:", err);
+    alert("Error recording points. Please try again.");
+  });
+}
+
+  function runAndCheck() {
+    const userCSS = document.getElementById('userCSS').value.trim().replace(/\s+/g, '').toLowerCase();
+    const expectedCSS = phases[currentPhase].expectedCSS.replace(/\s+/g, '').toLowerCase();
+    const outputFrame = document.getElementById('output');
+    const resultMsg = document.getElementById('resultMsg');
+
+    // Inject user's CSS and test HTML inside iframe
+    outputFrame.srcdoc = `<style>${document.getElementById('userCSS').value}</style>${phases[currentPhase].testHTML}`;
+
+if (userCSS === expectedCSS) {
+  if (currentPhase < phases.length - 1) {
+    resultMsg.innerText = "✅ Correct! Click Next to continue.";
+    resultMsg.style.color = "green";
+    document.getElementById('nextBtn').style.display = 'block';
+  } else {
+    if (confirm("🎉 Congratulations! You finished all phases! You will now receive 7620 points.")) {
+      awardPointsOnce();
+    }
+  }
+} else {
+  resultMsg.innerText = "❌ Try Again. Follow the instructions carefully.";
+  resultMsg.style.color = "red";
+}
+
+  }
+
+  function goToNextPhase() {
+    currentPhase++;
+    if (currentPhase < phases.length) {
+      updateInstruction();
+    }
+  }
+
+  function confirmQuit() {
+    if (confirm("Do you want to quit?")) {
+      window.location.href = "../levels/programminglevel.html";
+    }
+  }
+
+  updateInstruction();
+</script>
+</body>
+</html>

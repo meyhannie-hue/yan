@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Techy Me – Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    .form-container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 40px 30px;
+      border-radius: 20px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 114, 255, 0.5);
+    }
+
+    .divider {
+      margin: 30px 0 10px;
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h2>Welcome to TECHY ME</h2>
+
+    <!-- New User Form -->
+    <form id="nameForm">
+      <label for="playerName"><strong>New Player</strong> – Enter your name:</label>
+      <input type="text" id="playerName" placeholder="Type your name..." required />
+      <button class="btn" type="submit" onclick="playClick()">Start Playing</button>
+    </form>
+
+    <div class="divider">OR</div>
+
+    <!-- Existing User Button -->
+    <button class="btn" onclick="playClick(); useExistingName()">🎮 I already have a name</button>
+  </div>
+
+  <audio id="clickSound" src="sounds/Button_Click_-_Sound_Effect(256k).mp3" preload="auto"></audio>
+
+  <script>
+    const clickSound = document.getElementById("clickSound");
+    const api = "http://localhost:3000/api"; // 🔁 Change if deployed online
+
+    function playClick() {
+      clickSound.currentTime = 0;
+      clickSound.play().catch(() => {});
+    }
+
+    // New player creation
+    document.getElementById("nameForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      playClick();
+
+      const username = document.getElementById("playerName").value.trim();
+      if (!username) return alert("⚠️ Please enter your name.");
+      sessionStorage.setItem("playerName", username);
+
+      // Check if player exists
+      fetch(`${api}/player/${encodeURIComponent(username)}`)
+        .then(res => {
+          if (res.ok) {
+            alert("⚠️ This name already exists. Please use the 'I already have a name' option.");
+          } else if (res.status === 404) {
+            // Create new player
+            return fetch(`${api}/player`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username })
+            });
+          } else {
+            throw new Error("Server error");
+          }
+        })
+        .then(res => {
+          if (res && res.ok) goToDashboard();
+        })
+        .catch(err => {
+          alert("❌ Error: " + err.message);
+        });
+    });
+
+    // Existing player login
+    function useExistingName() {
+      const inputName = prompt("Enter your existing player name:");
+      if (!inputName) return;
+
+      fetch(`${api}/player/${encodeURIComponent(inputName.trim())}`)
+        .then(res => {
+          if (res.ok) {
+            sessionStorage.setItem("playerName", inputName.trim());
+            goToDashboard();
+          } else {
+            alert("❌ Name not found. Please register as a new player.");
+          }
+        })
+        .catch(err => {
+          alert("❌ Error checking player: " + err.message);
+        });
+    }
+
+    function goToDashboard() {
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 300);
+    }
+  </script>
+
+</body>
+</html>

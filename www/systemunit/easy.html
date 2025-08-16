@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assemble the Computer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #eef2f3, #8e9eab);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    body {
+      flex-direction: column;
+    }
+
+    .app-container {
+      flex: 1;
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      border-radius: 25px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 40px;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 15px 20px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      flex-grow: 1;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .back-button {
+      cursor: pointer;
+      font-size: 20px;
+      color: #fff;
+    }
+
+    .placeholder { width: 30px; }
+
+    h1, p {
+      text-align: center;
+      margin-top: 20px;
+      color: #343a40;
+    }
+
+    .container {
+      position: relative;
+      display: inline-block;
+      border: 5px solid #dee2e6;
+      border-radius: 15px;
+      margin: 0 auto;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      max-width: 100%;
+      width: 1000px;
+    }
+
+    .container img.main {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .label {
+      position: absolute;
+      background-color: #d4edda;
+      border-radius: 12px;
+      font-size: 13px;
+      border: 2px dashed #28a745;
+      overflow: hidden;
+    }
+
+    .label:hover {
+      background-color: #c3e6cb;
+    }
+
+    .label img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .dropped {
+      background-color: #bee5eb !important;
+      border: 2px solid #17a2b8 !important;
+    }
+
+    .powersupply { top: 23.5%; left: 26.9%; width: 19%; height: 15%; }
+    .ram         { top: 40%; left: 15%; width: 24%; height: 18%; }
+    .motherboard { top: 39.5%; left: 39.6%; width: 14%; height: 35%; }
+    .cd-dvd      { top: 15.5%; right: 10.5%; width: 30%; height: 30%; }
+    .harddrive   { top: 57.5%; right: 8%; width: 29.5%; height: 20%; }
+
+    .choices {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 30px;
+    }
+
+    .choice img {
+      width: 130px;
+      border-radius: 12px;
+      border: 3px solid #007bff;
+      cursor: grab;
+      padding: 8px;
+      background-color: #f0f8ff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .choice img:hover {
+      background-color: #d0ebff;
+      transform: scale(1.08);
+    }
+
+    .choice img:active {
+      cursor: grabbing;
+    }
+
+    .disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #ffc107;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.2s ease;
+    }
+
+    .controls button:hover {
+      background-color: #e0a800;
+    }
+
+    #resultMessage {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    @media (max-width: 1024px) {
+      .container {
+        width: 100%;
+        border-width: 3px;
+      }
+
+      .label {
+        font-size: 12px;
+      }
+
+      .choice img {
+        width: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="back-button" onclick="confirmBack()">⤺</div>
+      <div class="header-title">🧩 Assemble the Computer</div>
+      <div class="placeholder"></div>
+    </header>
+
+    <h1>Assemble the Computer</h1>
+    <p>Drag each component to its correct position inside the computer.</p>
+
+    <div class="container">
+      <img src="images/unit.png" alt="System Unit" class="main">
+      <div class="label powersupply" ondrop="drop(event)" ondragover="allowDrop(event)" data-correct="powersupply"></div>
+      <div class="label ram" ondrop="drop(event)" ondragover="allowDrop(event)" data-correct="ram"></div>
+      <div class="label motherboard" ondrop="drop(event)" ondragover="allowDrop(event)" data-correct="motherboard"></div>
+      <div class="label cd-dvd" ondrop="drop(event)" ondragover="allowDrop(event)" data-correct="cddvddrive"></div>
+      <div class="label harddrive" ondrop="drop(event)" ondragover="allowDrop(event)" data-correct="harddrive"></div>
+    </div>
+
+    <div class="choices" id="choices">
+      <div class="choice"><img src="images/ram.png" id="ram" alt="RAM" draggable="true" ondragstart="drag(event)"></div>
+      <div class="choice"><img src="images/harddisk.png" id="harddrive" alt="Hard Drive" draggable="true" ondragstart="drag(event)"></div>
+      <div class="choice"><img src="images/motherboard.png" id="motherboard" alt="Motherboard" draggable="true" ondragstart="drag(event)"></div>
+      <div class="choice"><img src="images/power.png" id="powersupply" alt="Power Supply" draggable="true" ondragstart="drag(event)"></div>
+      <div class="choice"><img src="images/dvd.png" id="cddvddrive" alt="CD/DVD Drive" draggable="true" ondragstart="drag(event)"></div>
+    </div>
+
+    <div class="controls">
+      <button onclick="submitActivity()">✅ Submit</button>
+      <button onclick="undoLast()">↩ Undo</button>
+    </div>
+
+    <div id="resultMessage"></div>
+  </div>
+
+  <script>
+    let lastAction = null;
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const dragged = document.getElementById(data);
+      const target = ev.target.closest(".label");
+
+      if (!dragged || !target || target.querySelector("img")) return;
+
+      const clone = dragged.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.inset = 0;
+      clone.style.width = "100%";
+      clone.style.height = "100%";
+      clone.style.objectFit = "cover";
+      clone.draggable = false;
+      clone.id = dragged.id;
+
+      const originalParent = dragged.parentElement;
+
+      target.innerHTML = '';
+      target.appendChild(clone);
+      target.classList.add("dropped");
+
+      dragged.classList.add("disabled");
+      dragged.draggable = false;
+
+      lastAction = { element: dragged, label: target, originalParent };
+    }
+
+    function undoLast() {
+      if (!lastAction) return;
+
+      const { element, label, originalParent } = lastAction;
+
+      label.innerHTML = '';
+      label.classList.remove("dropped");
+
+      element.classList.remove("disabled");
+      element.draggable = true;
+
+      if (!originalParent.contains(element)) {
+        originalParent.appendChild(element);
+      }
+
+      lastAction = null;
+    }
+
+    function confirmBack() {
+      if (confirm("Are you sure you want to quit? Progress will be lost.")) {
+        window.location.href = "../levels/systemunitlevel.html";
+      }
+    }
+
+    function submitActivity() {
+      const labels = document.querySelectorAll('.label');
+      let correct = 0;
+
+      labels.forEach(label => {
+        const img = label.querySelector('img');
+        if (img && label.dataset.correct === img.id) {
+          correct++;
+        }
+      });
+
+      let score = correct * 300;
+      let isPerfect = correct === 5;
+      let playerName = localStorage.getItem("playerName");
+      let message = document.getElementById('resultMessage');
+
+      if (!playerName) {
+        alert("No player name found. Please go back and enter your name.");
+        return;
+      }
+
+      const progressKey = "progress_" + playerName.toLowerCase();
+      const progress = JSON.parse(localStorage.getItem(progressKey)) || {};
+      progress.assemble = {
+        completed: true,
+        score: score,
+        perfect: isPerfect
+      };
+      localStorage.setItem(progressKey, JSON.stringify(progress));
+
+      message.innerHTML = isPerfect
+        ? `🎉 Perfect! You got 5/5 correct.<br>🏆 Score: ${score}`
+        : `❌ You got ${correct}/5 correct.<br>🏆 Score: ${score}`;
+      message.style.color = isPerfect ? 'green' : 'red';
+    }
+  </script>
+</body>
+</html>

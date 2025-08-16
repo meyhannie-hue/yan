@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Computer Port Labeling</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef3f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .container {
+      position: relative;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .container img {
+      width: 1000px;
+      height: auto;
+    }
+
+    .drop-zone {
+      position: absolute;
+      background: #fdfae6;
+      border: 2px dashed #777;
+      padding: 6px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      text-align: center;
+      color: #333;
+      width: 120px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s, border 0.3s;
+    }
+
+    .drop-zone.correct {
+      background: #d4f7d4;
+      border: 2px solid green;
+    }
+
+    .ps2         { top: 190px; left: 140px; }
+    .serial      { top: 240px; left: 140px; }
+    .vga         { top: 295px; left: 140px; }
+    .usb         { top: 345px; left: 140px; }
+    .audio       { top: 415px; left: 140px; }
+    .powersupply { top: 135px; left: 600px; }
+    .parallel    { top: 265px; left: 620px; }
+    .rj45        { top: 355px; left: 630px; }
+
+    .choices {
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .choice {
+      background: #dff0ff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: grab;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+      transition: background 0.2s;
+    }
+
+    .choice:hover {
+      background-color: #b4e1ff;
+    }
+
+    .buttons {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-back {
+      background: #bdc3c7;
+      color: #2c3e50;
+    }
+
+    .btn-back:hover {
+      background: #95a5a6;
+    }
+
+    .btn-submit {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-submit:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Label the Computer Ports</h2>
+
+  <div class="container">
+    <img src="images/medium.png" alt="Computer Back Ports">
+
+    <div class="drop-zone ps2"         data-correct="Ps/2 ports"     ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone serial"      data-correct="Serial port"    ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone vga"         data-correct="UGA Video"      ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone usb"         data-correct="USB Ports"      ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone audio"       data-correct="Audio Jacks"    ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone powersupply" data-correct="Power Supply"   ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone parallel"    data-correct="Parallel Port"  ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <div class="drop-zone rj45"        data-correct="RJ45 NIC"       ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+  </div>
+
+  <div class="choices">
+    <div class="choice" draggable="true" id="Ps/2 ports"    ondragstart="drag(event)">Ps/2 ports</div>
+    <div class="choice" draggable="true" id="Serial port"   ondragstart="drag(event)">Serial port</div>
+    <div class="choice" draggable="true" id="UGA Video"     ondragstart="drag(event)">UGA Video</div>
+    <div class="choice" draggable="true" id="USB Ports"     ondragstart="drag(event)">USB Ports</div>
+    <div class="choice" draggable="true" id="Audio Jacks"   ondragstart="drag(event)">Audio Jacks</div>
+    <div class="choice" draggable="true" id="Power Supply"  ondragstart="drag(event)">Power Supply</div>
+    <div class="choice" draggable="true" id="Parallel Port" ondragstart="drag(event)">Parallel Port</div>
+    <div class="choice" draggable="true" id="RJ45 NIC"      ondragstart="drag(event)">RJ45 NIC</div>
+  </div>
+
+  <div class="buttons">
+    <button class="btn-back" onclick="confirmBack()">Back</button>
+    <button class="btn-submit" onclick="submitAnswers()">Submit</button>
+  </div>
+
+  <script>
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const dragged = document.getElementById(data);
+      const target = ev.target;
+
+      if (target.querySelector('.choice')) return;
+
+      if (target.dataset.correct === data) {
+        target.classList.add("correct");
+      }
+
+      target.textContent = "";
+      target.appendChild(dragged);
+      dragged.draggable = false;
+      dragged.style.cursor = "default";
+    }
+
+    function confirmBack() {
+      if (confirm("⚠️ Are you sure you want to go back? Progress will be lost.")) {
+        window.location.href = "../levels/systemunitlevel.html";
+      }
+    }
+
+    function submitAnswers() {
+      const zones = document.querySelectorAll(".drop-zone");
+      let correctCount = 0;
+
+      zones.forEach(zone => {
+        const choice = zone.querySelector(".choice");
+        if (choice && zone.dataset.correct === choice.id) {
+          correctCount++;
+        }
+      });
+
+      const total = zones.length;
+      const points = correctCount * 200;
+
+      if (correctCount === total) {
+        alert(`🎯 Perfect! You got all ${total} correct.\n🏆 +${points} points`);
+      } else {
+        alert(`✅ You got ${correctCount} out of ${total} correct.\n🎯 +${points} points`);
+      }
+
+      let playerPoints = parseInt(localStorage.getItem("player_points") || "0");
+      playerPoints += points;
+      localStorage.setItem("player_points", playerPoints.toString());
+    }
+  </script>
+
+</body>
+</html>

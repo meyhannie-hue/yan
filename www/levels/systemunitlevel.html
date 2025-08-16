@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>System Unit Levels</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom right, #f0fff4, #c8e6c9);
+    }
+
+    .app-container {
+      max-width: 420px;
+      margin: auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #43a047;
+      color: #fff;
+      padding: 20px;
+      font-weight: bold;
+    }
+
+    .title {
+      font-size: 20px;
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .back-button {
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .content-title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 600;
+      margin-top: 30px;
+      color: #2e7d32;
+    }
+
+    .level-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+      gap: 20px;
+    }
+
+    .level {
+      background-color: #e8f5e9;
+      padding: 14px 30px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+      text-align: center;
+    }
+
+    .level:hover {
+      transform: translateY(-2px);
+    }
+
+    .level.locked {
+      opacity: 0.5;
+      cursor: pointer;
+    }
+
+    .level.locked::after {
+      content: " 🔒";
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .app-container {
+        border-radius: 0;
+      }
+
+      .title {
+        font-size: 18px;
+      }
+
+      .content-title {
+        font-size: 20px;
+      }
+
+      .level {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="back-button" onclick="goBack()">⤺</div>
+      <div class="title">TECHY ME</div>
+      <div style="width: 30px;"></div>
+    </header>
+
+    <div class="content-title">SYSTEM UNIT</div>
+
+    <div class="level-buttons">
+      <div class="level" onclick="goTo('easy.html')">Normal</div>
+      <div id="mediumLevel" class="level locked">Medium</div>
+      <div id="hardLevel" class="level locked">Hard</div>
+    </div>
+  </div>
+
+  <script>
+    // API base URL - change accordingly
+    const api = "http://localhost:3000/api"; 
+
+    let playerData = null;
+
+    function goTo(page) {
+      window.location.href = `../systemunit/${page}`;
+    }
+
+    function goBack() {
+      window.location.href = "../dashboard.html";
+    }
+
+    async function loadProgressFromBackend() {
+      const playerName = sessionStorage.getItem("playerName");
+      if (!playerName) {
+        alert("❌ No player found. Redirecting...");
+        return window.location.href = "../index.html";
+      }
+
+      try {
+        const res = await fetch(`${api}/player/${encodeURIComponent(playerName)}`);
+        if (!res.ok) throw new Error("Player not found");
+
+        playerData = await res.json();
+
+        const medium = document.getElementById("mediumLevel");
+        const hard = document.getElementById("hardLevel");
+
+        // Unlock buttons based on DB fields for system unit
+        if (playerData.systemunit_medium_unlocked) {
+          medium.classList.remove("locked");
+          medium.onclick = () => goTo("medium.html");
+        } else {
+          medium.onclick = () => buyLevel("systemunit_medium", 6000);
+        }
+
+        if (playerData.systemunit_hard_unlocked) {
+          hard.classList.remove("locked");
+          hard.onclick = () => goTo("hard.html");
+        } else {
+          hard.onclick = () => buyLevel("systemunit_hard", 7500);
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("❌ Failed to load player data. Please login again.");
+        sessionStorage.removeItem("playerName");
+        window.location.href = "../index.html";
+      }
+    }
+
+    async function buyLevel(level, cost) {
+      if (!playerData) return;
+
+      if (playerData.points < cost) {
+        return alert(`❌ You need ${cost} points to unlock this level.`);
+      }
+
+      if (confirm(`Spend ${cost} points to unlock this level?`)) {
+        try {
+          const res = await fetch(`${api}/buy-level`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: playerData.username,
+              level,
+              cost
+            })
+          });
+
+          if (res.ok) {
+            alert(`✅ Level unlocked!`);
+            playerData.points -= cost;
+            if (level === "systemunit_medium") {
+              playerData.systemunit_medium_unlocked = 1;
+            } else if (level === "systemunit_hard") {
+              playerData.systemunit_hard_unlocked = 1;
+            }
+            loadProgressFromBackend();
+          } else {
+            const errMsg = await res.text();
+            alert("❌ Failed to unlock: " + errMsg);
+          }
+        } catch (err) {
+          alert("❌ Error: " + err.message);
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadProgressFromBackend);
+  </script>
+</body>
+</html>

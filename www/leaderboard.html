@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard | Techy Me</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom right, #7be0d6, #675bcb);
+      color: #333;
+    }
+
+    .app-container {
+      max-width: 420px;
+      margin: auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .header {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: bold;
+      padding: 20px;
+      color: #fff;
+    }
+
+    .leaderboard-section {
+      padding: 20px;
+    }
+
+    .leaderboard-section h3 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .leaderboard-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .leaderboard-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .leaderboard-entry:last-child {
+      border-bottom: none;
+    }
+
+    .rank {
+      font-weight: bold;
+      width: 30px;
+    }
+
+    .user-info {
+      flex-grow: 1;
+      text-align: left;
+      padding-left: 10px;
+    }
+
+    .username {
+      font-weight: 500;
+    }
+
+    .score {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    .current-player {
+      background-color: #e1f3ff;
+      border-radius: 8px;
+    }
+
+    footer.footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background-color: #ffffff;
+      border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+    }
+
+    .icon {
+      font-size: 30px;
+      color: #4a90e2;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">TECHY ME</div>
+
+    <div class="leaderboard-section">
+      <h3>🏆 Leaderboard</h3>
+      <div class="leaderboard-box" id="leaderboardBox"></div>
+    </div>
+
+    <footer class="footer">
+      <div class="icon" onclick="gotoAbout()">🧾</div>
+      <div class="icon" style="background: #4e5d78; padding: 8px 12px; border-radius: 50%;">📊</div>
+      <div class="icon" onclick="gotoDashboard()">👑</div>
+      <div class="icon" onclick="gotoSetting()">⚙️</div>
+    </footer>
+  </div>
+
+  <script>
+    function gotoAbout() {
+      window.location.href = "about.html";
+    }
+    function gotoDashboard() {
+      window.location.href = "dashboard.html";
+    }
+    function gotoSetting() {
+      window.location.href = "setting.html";
+    }
+
+    async function displayLeaderboard() {
+      const playerName = sessionStorage.getItem('playerName');
+      if (!playerName) {
+        alert("Session expired. Please log in again.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/leaderboard');
+        if (!res.ok) throw new Error("Failed to fetch leaderboard.");
+
+        const players = await res.json();
+        const container = document.getElementById("leaderboardBox");
+        container.innerHTML = "";
+
+        players.forEach((player, i) => {
+          const div = document.createElement("div");
+          div.className = "leaderboard-entry";
+          if (player.name === playerName) {
+            div.classList.add("current-player");
+          }
+
+          div.innerHTML = `
+            <div class="rank">${i + 1}</div>
+            <div class="user-info">
+              <div class="username">${player.name}</div>
+            </div>
+            <div class="score">${player.points} pts</div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        alert("❌ Unable to load leaderboard.");
+        console.error(error);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", displayLeaderboard);
+  </script>
+</body>
+</html>

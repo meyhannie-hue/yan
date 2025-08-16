@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JavaScript Coding Game - Hard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #ffecd2, #fcb69f);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .back-button {
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+    }
+    .title {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .placeholder {
+      width: 30px;
+    }
+    .challenge {
+      background: #fff;
+      padding: 20px;
+      font-size: 18px;
+      text-align: center;
+      border-bottom: 2px solid #ccc;
+    }
+    #progress {
+      font-weight: bold;
+      color: #444;
+      margin-top: 5px;
+    }
+    textarea {
+      width: 90%;
+      max-width: 700px;
+      margin: 15px auto;
+      height: 200px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      display: block;
+      background: #ffffff;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background-color: #e67e22;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 90%;
+      max-width: 700px;
+    }
+    button:hover { background-color: #d35400; }
+    #nextBtn {
+      background-color: #27ae60;
+      display: none;
+    }
+    #nextBtn:hover {
+      background-color: #1e8449;
+    }
+    .result {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #333;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+      min-height: 300px;
+      background: #fff;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="back-button" onclick="goBack()">⤺</div>
+    <div class="title">💻 JavaScript Coding Game - Hard</div>
+    <div class="placeholder"></div>
+  </header>
+
+  <div class="challenge">
+    <div id="instruction">NO. 1: Create a button that shows "Hello World" using alert() when clicked.</div>
+    <div id="progress">1 / 5</div>
+  </div>
+
+  <textarea id="userCode" placeholder="Write your HTML & JavaScript code here..."></textarea>
+  <button onclick="runAndCheck()">▶ Run & Check</button>
+  <div class="result" id="resultMsg"></div>
+  <button id="nextBtn" onclick="goToNextPhase()">➡ Next Phase</button>
+
+  <iframe id="output"></iframe>
+
+  <script>
+    const phases = [
+  {
+    instruction: 'NO. 1: Create a button that shows "Hello World" using alert() when clicked.',
+    test: (doc) => !!doc.querySelector('button'),
+    expectedKeyword: "alert('Hello World')",
+    completed: false
+  },
+  {
+    instruction: 'NO. 2: Create a paragraph that displays the number 50 using JavaScript inside an inline <script> tag.',
+    test: (doc) => {
+      const p = doc.querySelector('p');
+      return p && p.innerText.includes("50");
+    },
+    expectedKeyword: "let result = 5 * 10",
+    completed: false
+  },
+  {
+    instruction: 'NO. 3: Create a paragraph that displays today\'s date using an inline <script> tag and the Date object.',
+    test: (doc) => {
+      const p = doc.querySelector('p');
+      return p && /\d{4}-\d{2}-\d{2}/.test(p.innerText);
+    },
+    expectedKeyword: "new Date()",
+    completed: false
+  },
+  {
+    instruction: 'NO. 4: Create an input and a button. When the button is clicked, show an alert displaying the input value using an inline onclick handler.',
+    test: (doc) => doc.querySelector('input') && doc.querySelector('button'),
+    expectedKeyword: "alert(document.getElementById('input')",
+    completed: false
+  },
+  {
+  instruction: 'NO. 5: Create a button that changes its background color to blue when clicked using an inline onclick handler.',
+  test: (doc) => {
+    const buttons = Array.from(doc.querySelectorAll('button'));
+    if (buttons.length === 0) return false;
+
+    // Simulate clicking the first button
+    buttons[0].click();
+
+    // Check if button's background color is blue (rgb or hex)
+    const style = getComputedStyle(buttons[0]);
+    return style.backgroundColor === 'blue' || style.backgroundColor === 'rgb(0, 0, 255)';
+  },
+  expectedKeyword: "this.style.backgroundColor = 'blue'",
+  completed: false
+}];
+
+
+    let currentPhase = 0;
+
+    function updateInstruction() {
+      document.getElementById('instruction').innerText = phases[currentPhase].instruction;
+      document.getElementById('progress').innerText = `${currentPhase + 1} / ${phases.length}`;
+      document.getElementById('userCode').value = '';
+      document.getElementById('resultMsg').innerText = '';
+      document.getElementById('output').srcdoc = '';
+      document.getElementById('nextBtn').style.display = 'none';
+    }
+
+    function runAndCheck() {
+      const userCode = document.getElementById('userCode').value.trim();
+      const outputFrame = document.getElementById('output');
+      const resultMsg = document.getElementById('resultMsg');
+
+      outputFrame.srcdoc = userCode;
+
+      setTimeout(() => {
+        const doc = outputFrame.contentDocument || outputFrame.contentWindow.document;
+        const passedKeywordCheck = userCode.includes(phases[currentPhase].expectedKeyword);
+        const passedTest = phases[currentPhase].test(doc);
+
+        if (passedKeywordCheck && passedTest) {
+          resultMsg.innerText = "✅ Correct! Click Next to continue.";
+          resultMsg.style.color = "green";
+          phases[currentPhase].completed = true;
+
+          if (currentPhase < phases.length - 1) {
+            document.getElementById('nextBtn').style.display = 'block';
+          } else {
+            resultMsg.innerText = "🎉 Well done! You finished all JS hard phases!";
+            awardPointsOnce();
+            setTimeout(() => {
+              if (confirm("🎉 All challenges complete! Return to Programming Levels?")) {
+                window.location.href = "../levels/programminglevel.html";
+              }
+            }, 1000);
+          }
+        } else {
+          resultMsg.innerText = "❌ Not quite right. Check your syntax or logic.";
+          resultMsg.style.color = "red";
+        }
+      }, 300);
+    }
+
+    function goToNextPhase() {
+      currentPhase++;
+      if (currentPhase < phases.length) {
+        updateInstruction();
+      }
+    }
+
+    function awardPointsOnce() {
+  const username = sessionStorage.getItem("playerName");
+  if (!username) {
+    alert("⚠️ Player not logged in. Please log in first.");
+    return;
+  }
+
+  // Use sessionStorage key specific to username to prevent multiple rewards
+  const claimedKey = `programming_hard_claimed_${username}`;
+  if (sessionStorage.getItem(claimedKey)) {
+    console.log(`⚠️ Points for hard level already claimed by ${username}.`);
+    return;
+  }
+
+  // Points to award
+  const earnedPoints = 9120;
+
+  fetch("http://localhost:3000/api/programming-hard-perfect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message && data.message.toLowerCase().includes("already")) {
+      console.log("⚠️ Already awarded points to this user.");
+      sessionStorage.setItem(claimedKey, "true"); // Prevent further calls
+      return;
+    }
+
+    // Mark as claimed locally
+    sessionStorage.setItem(claimedKey, "true");
+
+    const resultMsg = document.getElementById("resultMsg");
+    resultMsg.innerText = `🎉 Congratulations, ${username}! You earned ${earnedPoints} points!`;
+    resultMsg.style.color = "green";
+
+    console.log(`✅ Awarded ${earnedPoints} points to ${username}`);
+  })
+  .catch(err => {
+    console.error("Error awarding points:", err);
+    alert("Error recording points. Please try again.");
+  });
+}
+
+    function goBack() {
+      window.location.href = "../levels/programminglevel.html";
+    }
+
+    updateInstruction();
+  </script>
+
+</body>
+</html>

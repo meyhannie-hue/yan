@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel - TECHY ME</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #f5f7fa, #c3cfe2);
+    }
+
+    .admin-container {
+      max-width: 960px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #4a4a4a;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    th {
+      background-color: #6c63ff;
+      color: white;
+    }
+
+    button {
+      padding: 6px 10px;
+      border: none;
+      background-color: #6c63ff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover {
+      background-color: #574fd6;
+    }
+
+    .danger {
+      background-color: #e74c3c;
+    }
+
+    .danger:hover {
+      background-color: #c0392b;
+    }
+
+    @media (max-width: 768px) {
+      .admin-container {
+        padding: 15px;
+        margin: 10px;
+        border-radius: 0;
+      }
+
+      table {
+        font-size: 12px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      button {
+        font-size: 12px;
+        padding: 5px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="top-bar">
+      <h1>👑 Admin Panel</h1>
+      <button onclick="goBack()">⤺ Back</button>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table id="playerTable">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Points</th>
+            <th>Progress</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data injected via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function goBack() {
+      window.location.href = "dashboard.html";
+    }
+
+    async function loadAdmin() {
+      try {
+        const res = await fetch("/api/admin/players");
+        if (!res.ok) throw new Error("Failed to load players.");
+        const players = await res.json();
+        renderPlayers(players);
+      } catch (err) {
+        alert("❌ Error loading player list.");
+        console.error(err);
+      }
+    }
+
+    function renderPlayers(players) {
+      const tableBody = document.querySelector("#playerTable tbody");
+      tableBody.innerHTML = '';
+
+      players.forEach(player => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${player.name}</td>
+          <td>${player.points}</td>
+          <td><pre style="font-size: 11px;">${JSON.stringify(player.progress || {}, null, 2)}</pre></td>
+          <td>
+            <button onclick="resetPlayer('${player.name}')">Reset</button>
+            <button class="danger" onclick="deletePlayer('${player.name}')">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    async function resetPlayer(name) {
+      const confirmReset = confirm(`Reset progress for ${name}?`);
+      if (!confirmReset) return;
+
+      try {
+        const res = await fetch("/api/admin/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert(result.message);
+          loadAdmin();
+        } else {
+          alert("❌ " + result.error);
+        }
+      } catch (err) {
+        alert("❌ Failed to reset player.");
+        console.error(err);
+      }
+    }
+
+    async function deletePlayer(name) {
+      const confirmDelete = confirm(`Delete player ${name}?`);
+      if (!confirmDelete) return;
+
+      try {
+        const res = await fetch(`/api/admin/${encodeURIComponent(name)}`, {
+          method: "DELETE"
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert(result.message);
+          loadAdmin();
+        } else {
+          alert("❌ " + result.error);
+        }
+      } catch (err) {
+        alert("❌ Failed to delete player.");
+        console.error(err);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAdmin);
+  </script>
+</body>
+</html>

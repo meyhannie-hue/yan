@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TECHY ME - Get Started</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .background-gradient {
+      position: absolute;
+      top: -100px;
+      left: -100px;
+      width: 300%;
+      height: 300%;
+      background: radial-gradient(circle at center, #00c6ff, #0072ff, #0f2027);
+      opacity: 0.1;
+      filter: blur(120px);
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      animation: fadeInUp 1s ease;
+      display: none;
+    }
+
+    .card h1 {
+      font-size: 2.2rem;
+      margin-bottom: 15px;
+    }
+
+    .card p {
+      font-size: 1rem;
+      margin-bottom: 30px;
+      color: #ddd;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 114, 255, 0.5);
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: translateY(0px); opacity: 1; }
+    }
+
+    .loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background-color: #0f2027;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #00c6ff;
+      font-family: monospace;
+      text-align: center;
+    }
+
+    .typing-text {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid #00c6ff;
+      animation: typing 2s steps(20, end), blink 0.7s step-end infinite;
+    }
+
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 18ch }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent }
+    }
+
+    .progress-bar {
+      width: 300px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      animation: fillBar 7s linear forwards;
+    }
+
+    @keyframes fillBar {
+      to { width: 100%; }
+    }
+
+    @media (max-width: 500px) {
+      .card h1 {
+        font-size: 1.7rem;
+      }
+
+      .btn {
+        font-size: 0.95rem;
+        padding: 10px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="background-gradient"></div>
+
+  <!-- Loading Screen -->
+  <div class="loader" id="loader">
+    <div class="typing-text">Loading TECHY ME</div>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Welcome Card -->
+  <div class="card" id="mainCard">
+    <h1>Welcome to TECHY ME</h1>
+    <p>Gamified learning for future tech pros. Let’s start your interactive IT journey!</p>
+    <button class="btn" onclick="playClickSoundAndStart()">Get Started</button>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="loadingSound" src="sounds/loading_1.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="sounds/Button_Click_-_Sound_Effect(256k).mp3" preload="auto"></audio>
+
+  <script>
+    window.addEventListener("load", () => {
+      const loader = document.getElementById("loader");
+      const mainCard = document.getElementById("mainCard");
+      const loadingSound = document.getElementById("loadingSound");
+
+      // Play loading sound
+      loadingSound.muted = false;
+      loadingSound.play().catch(err => {
+        console.warn("Autoplay blocked:", err);
+      });
+
+      // Show card after 7 seconds
+      setTimeout(() => {
+        loader.style.display = "none";
+        mainCard.style.display = "block";
+        loadingSound.pause();
+        loadingSound.currentTime = 0;
+      }, 7000);
+    });
+
+    function playClickSoundAndStart() {
+      const clickSound = document.getElementById("clickSound");
+      clickSound.currentTime = 0;
+      clickSound.play().catch(() => {}); // Play click sound
+
+      setTimeout(() => {
+        window.location.href = "playername.html";
+      }, 200); // Delay to let click sound play
+    }
+  </script>
+
+</body>
+</html>

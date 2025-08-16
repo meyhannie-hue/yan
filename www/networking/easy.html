@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ethernet T568B Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style/easy.css" />
+</head>
+<body>
+  <button class="back-btn" onclick="window.history.back()">⭥ Back</button>
+  <h1>Ethernet Wiring Game - T568B</h1>
+  <div class="timer">⏳ Time left: <span id="countdown">1:00</span></div>
+
+  <div class="game">
+    <canvas id="lineCanvas" width="1920" height="1080"></canvas>
+    <div class="column" id="pinColumn"></div>
+    <div class="column" id="wireColumn"></div>
+  </div>
+
+  <button class="submit-btn" onclick="checkWiring()">Submit</button>
+
+  <script>
+    const canvas = document.getElementById('lineCanvas');
+    const ctx = canvas.getContext('2d');
+    let startWire = null;
+    let connections = [];
+    let timeLeft = 60;
+    let timerStarted = false;
+    let timer;
+    const countdownEl = document.getElementById('countdown');
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function startTimer() {
+      if (timerStarted) return;
+      timerStarted = true;
+      countdownEl.textContent = formatTime(timeLeft);
+      timer = setInterval(() => {
+        timeLeft--;
+        countdownEl.textContent = formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("⏰ Time's up! Try again.");
+          location.reload();
+        }
+      }, 1000);
+    }
+
+    // Create pin slots (Pin 1 to 8)
+    const pins = document.getElementById('pinColumn');
+    for (let i = 1; i <= 8; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.pin = i;
+      slot.innerHTML = `Pin ${i} <span class="pin-dot"></span>`;
+      pins.appendChild(slot);
+    }
+
+    // Wire colors for T568B
+    const wiresData = {
+      "White-Orange": "linear-gradient(to right, white 50%, orange 50%)",
+      "Orange": "orange",
+      "White-Green": "linear-gradient(to right, white 50%, green 50%)",
+      "Blue": "blue",
+      "White-Blue": "linear-gradient(to right, white 50%, blue 50%)",
+      "Green": "green",
+      "White-Brown": "linear-gradient(to right, white 50%, brown 50%)",
+      "Brown": "brown"
+    };
+
+    // Shuffle and create draggable wire elements
+    const shuffled = Object.keys(wiresData).sort(() => 0.5 - Math.random());
+    const wiresContainer = document.getElementById('wireColumn');
+    shuffled.forEach(color => {
+      const div = document.createElement('div');
+      div.className = 'wire';
+      div.draggable = true;
+      div.dataset.color = color;
+      div.style.background = wiresData[color];
+      div.innerHTML = `<span class="pin-dot"></span> ${color}`;
+      wiresContainer.appendChild(div);
+
+      div.addEventListener('dragstart', () => {
+        startWire = div;
+        startTimer();
+      });
+      div.addEventListener('mousedown', startTimer);
+      div.addEventListener('touchstart', startTimer);
+    });
+
+    // Handle drop connections
+    document.querySelectorAll('.slot').forEach(slot => {
+      slot.addEventListener('dragover', e => e.preventDefault());
+      slot.addEventListener('drop', () => {
+        const pin = slot.getAttribute('data-pin');
+        const color = startWire.getAttribute('data-color');
+        connections = connections.filter(c => c.pin !== pin && c.color !== color);
+        connections.push({ pin, color, wire: startWire });
+        drawConnections();
+      });
+    });
+
+    function drawConnections() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rect = canvas.getBoundingClientRect();
+      connections.forEach(conn => {
+        const pinDot = document.querySelector(`.slot[data-pin="${conn.pin}"] .pin-dot`).getBoundingClientRect();
+        const wireDot = conn.wire.querySelector('.pin-dot').getBoundingClientRect();
+        const x1 = wireDot.left + wireDot.width / 2 - rect.left;
+        const y1 = wireDot.top + wireDot.height / 2 - rect.top;
+        const x2 = pinDot.left + pinDot.width / 2 - rect.left;
+        const y2 = pinDot.top + pinDot.height / 2 - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineWidth = 4;
+
+        if (conn.color.includes('-')) {
+          const [c1, c2] = conn.color.split('-');
+          const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+          gradient.addColorStop(0, c1.toLowerCase());
+          gradient.addColorStop(1, c2.toLowerCase());
+          ctx.strokeStyle = gradient;
+        } else {
+          ctx.strokeStyle = conn.color.toLowerCase();
+        }
+        ctx.stroke();
+      });
+    }
+
+    async function checkWiring() {
+  const correctOrder = [
+    'White-Orange', 'Orange', 'White-Green', 'Blue',
+    'White-Blue', 'Green', 'White-Brown', 'Brown'
+  ];
+
+  if (connections.length < 8) {
+    alert("⚠️ Incomplete: Please connect all wires.");
+    return;
+  }
+
+  const currentOrder = [];
+  for (let i = 1; i <= 8; i++) {
+    const match = connections.find(c => c.pin === i.toString());
+    currentOrder.push(match ? match.color : null);
+  }
+
+  const username = sessionStorage.getItem("playerName"); // Get name from login
+  if (!username) {
+    alert("⚠️ Player not logged in. Please log in first.");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/api/t568b/easy/submit", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username, correct: currentOrder })
+});
+
+
+    const data = await res.json();
+    alert(data.message);
+
+    setTimeout(() => location.reload(), 1500);
+  } catch (err) {
+    alert("❌ Submission error");
+    console.error(err);
+  }
+}
+  </script>
+</body>
+</html>
