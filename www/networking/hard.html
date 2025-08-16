@@ -295,7 +295,7 @@ const username = sessionStorage.getItem("playerName");
 
     if (phasePerfect.t568b && phasePerfect.crossover) {
       try {
-        const res = await fetch('http://localhost:3000/updateHardPoints', {
+        const res = await fetch("https://myapp-backend.onrender.com/api/updateHardPoints", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, points: 4560 })

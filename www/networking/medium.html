@@ -155,7 +155,7 @@
         }
 
         // Tell backend: medium perfect achieved
-        fetch("http://localhost:3000/api/networking-medium-perfect", {
+        fetch("https://myapp-backend.onrender.com/api/networking-medium-perfect", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username })

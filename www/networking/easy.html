@@ -157,7 +157,7 @@
   }
 
   try {
-    const res = await fetch("http://localhost:3000/api/t568b/easy/submit", {
+    const res = await fetch("https://myapp-backend.onrender.com/api/t568b/easy/submit", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ username, correct: currentOrder })
