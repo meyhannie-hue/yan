@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-const path = require("path");
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -18,12 +18,15 @@ app.use(session({
   saveUninitialized: true
 }));
 
-// MySQL connection pool
+// MySQL connection pool (use Render env variables)
 const db = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'techyme'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // ------------------- API ROUTES -------------------
@@ -31,15 +34,12 @@ const db = mysql.createPool({
 // GET player info
 app.get('/api/player/:username', async (req, res) => {
   const { username } = req.params;
-
   try {
     const [rows] = await db.query('SELECT * FROM players WHERE username = ?', [username]);
-    if (rows.length > 0) {
-      res.status(200).json(rows[0]);
-    } else {
-      res.status(404).json({ message: 'Player not found' });
-    }
+    if (rows.length > 0) res.status(200).json(rows[0]);
+    else res.status(404).json({ message: 'Player not found' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -56,6 +56,7 @@ app.post('/api/player', async (req, res) => {
     await db.query('INSERT INTO players (username) VALUES (?)', [username]);
     res.status(201).json({ message: 'Player created successfully' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -70,9 +71,7 @@ app.post('/api/t568b/easy/submit', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Player not found' });
 
     const player = rows[0];
-    if (player.networking_easy_perfect === 1) {
-      return res.status(200).json({ message: '✅ Easy level already completed!' });
-    }
+    if (player.networking_easy_perfect === 1) return res.status(200).json({ message: '✅ Easy level already completed!' });
 
     const correctOrder = ['White-Orange', 'Orange', 'White-Green', 'Blue', 'White-Blue', 'Green', 'White-Brown', 'Brown'];
     const isPerfect = correct.length === 8 && correct.every((c, i) => c === correctOrder[i]);
@@ -87,9 +86,7 @@ app.post('/api/t568b/easy/submit', async (req, res) => {
         message: `🎉 Perfect! +${rewardPoints} points awarded for Easy level.`,
         pointsAwarded: rewardPoints
       });
-    } else {
-      return res.status(200).json({ message: "❌ Incorrect wiring. Try again!" });
-    }
+    } else return res.status(200).json({ message: "❌ Incorrect wiring. Try again!" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -126,13 +123,12 @@ app.post("/api/buy-level", async (req, res) => {
 
 // Networking medium perfect
 app.post("/api/networking-medium-perfect", async (req, res) => {
-  try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ message: "Username is required" });
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ message: "Username is required" });
 
+  try {
     const [rows] = await db.query("SELECT networking_medium_perfect FROM players WHERE username = ?", [username]);
     if (rows.length === 0) return res.status(404).json({ message: "Player not found" });
-
     if (rows[0].networking_medium_perfect) return res.json({ message: "Already awarded for medium perfect score" });
 
     await db.query("UPDATE players SET points = points + 3040, networking_medium_perfect = 1 WHERE username = ?", [username]);
@@ -159,13 +155,12 @@ app.post('/updateHardPoints', async (req, res) => {
 
 // Programming Easy Perfect
 app.post("/api/programming-easy-perfect", async (req, res) => {
-  try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ message: "Username is required" });
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ message: "Username is required" });
 
+  try {
     const [rows] = await db.query("SELECT programming_easy_perfect FROM players WHERE username = ?", [username]);
     if (rows.length === 0) return res.status(404).json({ message: "Player not found" });
-
     if (rows[0].programming_easy_perfect) return res.json({ message: "Already awarded for programming easy perfect score" });
 
     await db.query("UPDATE players SET points = points + ?, programming_easy_perfect = 1 WHERE username = ?", [6120, username]);
@@ -178,13 +173,12 @@ app.post("/api/programming-easy-perfect", async (req, res) => {
 
 // Programming Medium Perfect
 app.post("/api/programming-medium-perfect", async (req, res) => {
-  try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ message: "Username is required" });
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ message: "Username is required" });
 
+  try {
     const [rows] = await db.query("SELECT programming_medium_perfect FROM players WHERE username = ?", [username]);
     if (rows.length === 0) return res.status(404).json({ message: "Player not found" });
-
     if (rows[0].programming_medium_perfect) return res.json({ message: "Already awarded for programming medium perfect score" });
 
     await db.query("UPDATE players SET points = points + ?, programming_medium_perfect = 1 WHERE username = ?", [7620, username]);
@@ -195,36 +189,19 @@ app.post("/api/programming-medium-perfect", async (req, res) => {
   }
 });
 
-// Programming Hard Perfect
-app.post("/api/programming-hard-perfect", async (req, res) => {
-  try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ message: "Username is required" });
+// ------------------- Serve Frontend -------------------
+app.use(express.static(path.join(__dirname, "../www")));
 
-    const [rows] = await db.query("SELECT programming_hard_perfect FROM players WHERE username = ?", [username]);
-    if (rows.length === 0) return res.status(404).json({ message: "Player not found" });
-
-    if (rows[0].programming_hard_perfect) return res.json({ message: "Already awarded for programming hard perfect score" });
-
-    await db.query("UPDATE players SET points = points + ?, programming_hard_perfect = 1 WHERE username = ?", [9120, username]);
-    res.json({ message: `🏆 9120 points awarded for programming hard perfect!` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../www/index.html'), err => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).send('Server error');
+    }
+  });
 });
 
-// ------------------- FRONTEND -------------------
-
-// Serve static files
-app.use(express.static(path.join(__dirname, "www")));
-
-// SPA fallback (exclude /api)
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "www/index.html"));
-});
-
-// ------------------- START SERVER -------------------
+// ------------------- Start Server -------------------
 app.listen(port, () => {
   console.log(`✅ Backend running at http://localhost:${port}`);
 });
